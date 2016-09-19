@@ -1,0 +1,125 @@
+/* CREATED BY: DAVID BROWN, brown@mcyos.edu.hk
+
+BIND THIS SCRIPT TO A DOC FOR IT TO WORK!
+
+This script add a UI element to a doc which, when clicked, will take a range of sentences, each separated with a newline character (I.E. it takes a group of paragraphs)
+and outputs them according to the EDB guidelines, with the font set to Comic Sans. 
+
+KNOWN ISSUES: DOES NOT KEEP COMMAS IN THE ORIGINAL SENTENCES */
+
+function onOpen() {
+  var ui = DocumentApp.getUi();
+  // Or DocumentApp or FormApp.
+  ui.createMenu('Want to make jumbled sentences?')
+      .addItem('Open the interface!', 'showSidebar')
+      .addToUi();
+  //set the base font to comic sans, if it's changed:
+  var doc = DocumentApp.getActiveDocument();
+  var doc_body = doc.getBody();
+  doc_body.setFontFamily('Comic Sans MS');
+}
+
+/**
+ * Opens a sidebar in the document containing the Add-on's user interface.
+ */
+function showSidebar() {
+  var ui = HtmlService.createHtmlOutputFromFile('Sidebar')
+      .setTitle('The Sentence Mangler').setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  DocumentApp.getUi().showSidebar(ui);
+}
+
+function getTextAreaStuff(valuesFromTextAreaBoxInYourHTMLFile){
+  //use the Logger to test the values that are coming in to make sure it is doing what you think.
+  Logger.log(valuesFromTextAreaBoxInYourHTMLFile);
+  
+  //here is where you can do some stuff to the values from your textarea, like run some of the GoogleAppsScript API stuff
+  var result = valuesFromTextAreaBoxInYourHTMLFile;
+  result = result.trim();
+  
+  //use the DocumentApp API to write the result to the Active Doc
+  DocumentApp.getActiveDocument().getBody().appendParagraph(result);
+  //call the functions in the order they should be called, with correct args**
+  sentences_to_jumble = get_text();
+  jumbled_strings = make_jumbled_sentence(sentences_to_jumble); 
+  
+  //throw this back to the HTML file to work with on the client-Side function that will run OnSuccess
+  return result
+}
+
+function get_text(){
+  
+  //This function gets the text para by para, and then puts each para (each line) into an array which is returned 
+  var doc = DocumentApp.getActiveDocument();
+  var doc_body = doc.getBody();
+  the_raw_array = doc_body.getParagraphs();
+  var the_text_array = [];
+  
+  for(paragraph = 0; paragraph< the_raw_array.length; paragraph++){
+    
+    var text = the_raw_array[paragraph].getText();
+    the_text_array.push(text);
+  
+    }
+  
+  return the_text_array;
+  
+}//end of get_text function
+
+function make_jumbled_sentence(input_array){
+  
+  //this function takes an array of sentences, works on each to jumble and format according to EDB Space town style
+
+   //Add a headline:
+    var doc = DocumentApp.getActiveDocument();
+    doc.getBody().appendParagraph("Here you go:");
+    doc.getBody().appendParagraph("");
+  
+  //Loop through the array given by get_text():
+  for(sentence = 0; sentence < input_array.length; sentence ++){
+      var input_sentence = input_array[sentence];  
+      var jumbled_sentence_array = input_sentence.split(" ");
+      var formatted_sentence_array = [];
+    
+   
+    
+      //add space slash space between each word (" / ") and put it into a new array: 
+      for(i = 0; i < jumbled_sentence_array.length; i++){
+            var new_item = jumbled_sentence_array[i] + " / ";
+            formatted_sentence_array.push(new_item);
+            }
+    
+      //Shuffle the array in place:
+      jumbled_sentence_array = shuffleArray(formatted_sentence_array);
+      
+      //convert the array to a new string:
+      var jumbled_sentence_string = jumbled_sentence_array.toString();
+      jumbled_sentence_string = jumbled_sentence_string.replace(/,/g, '');//this regex removes all commas by replacing them with a space (the g is replace all)
+      jumbled_sentence_string = jumbled_sentence_string.slice(0, jumbled_sentence_string.length - 2);
+  
+      //Send the jumbled sentence back to the doc as a numbered list item:    
+      var doc = DocumentApp.getActiveDocument();
+      doc.getBody().appendListItem(jumbled_sentence_string);
+      //doc.getBody().appendParagraph("__________________________________________________");
+      
+  }
+  
+  
+}//end of make_jumbled_sentence 
+
+/**
+ * Randomize array element order in-place.
+ * Using Durstenfeld shuffle algorithm.
+ */
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+}//end of shuffleArray function
+
+
+
+  
